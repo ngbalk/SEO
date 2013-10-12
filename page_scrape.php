@@ -3,7 +3,7 @@ require_once "ultimate-web-scraper/support/http.php";
 require_once "ultimate-web-scraper/support/web_browser.php";
 require_once "ultimate-web-scraper/support/simple_html_dom.php";
 $myPage = new Page("http://www.frontcoding.com");
-echo $myPage->title->plaintext . " " . print_r($myPage->myWords);
+echo $myPage->title->plaintext . " " . print_r(arsort($myPage->myWords));
 
 class Page{
 	public $html; //store as simple_html_dom
