@@ -25,6 +25,8 @@ class Page {
 	public $websiteid; //not sure how this will be determined
 	public $myTags;
 	public $myWords;
+	public $links_out;
+	public $links_in;
 
 	public function __construct($url){
 		
@@ -41,6 +43,8 @@ class Page {
 	  			$this->get_doctype();
 	  			$this->find_html_tags();
 	  			$this->find_all_words();
+	  			$this->store_links_in();
+	  			$this->store_links_out();
 	  			$this->init_save_page();
 	  		}
 
@@ -77,6 +81,28 @@ class Page {
 
 	}
 	*/
+	public function store_links_in(){
+		$linksin = array();
+		$all_links = $this->html->find("a"); //this array stores all anchors, now need to find if are links in/links out
+		foreach ($all_links as $link) {
+			$href = $link->href;
+			if(strpos($href, $this->url) !== false){
+				array_push($linksin, $href);
+			}
+		}
+		$this->link_in = $linksin;
+	}
+	public function store_links_out(){
+		$linksout = array();
+		$all_links = $this->html->find("a"); 
+		foreach ($all_links as $link) {
+			$href = $link->href;
+			if(strpos($href, $this->url) == false){
+				array_push($linksout, $href);
+			}
+		}
+		$this->links_out = $linksout;
+	}
 
 	public function get_doctype(){
 
