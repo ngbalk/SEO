@@ -9,9 +9,7 @@ TODO:
 CREATE method for getting doctype, whois data, file size, file type.  Currently we are inserting into the database using static attributes
 for sake of debugging.
 */
-require_once "ultimate-web-scraper/support/http.php";
-require_once "ultimate-web-scraper/support/web_browser.php";
-require_once "ultimate-web-scraper/support/simple_html_dom.php";
+
 $myPage = new Page("http://www.frontcoding.com");
 echo $myPage->title->plaintext . " " . var_dump($myPage->myWords) . var_dump($myPage->myTags) . $myPage->html->plaintext;
 class Page {
@@ -27,6 +25,7 @@ class Page {
 	public $myWords;
 	public $links_out;
 	public $links_in;
+	public $size;
 
 	public function __construct($url){
 		
@@ -147,59 +146,13 @@ class Page {
 			$this->myWords=$wordfreqs;
 		}
 	public function get_file_size(){
-			/*
-			TODO implement a method that finds the size of the file @url
-			*/
+			$this->size = strlen($this->html->plaintext);		
 		}
 	public function get_whois(){
 			/*
 			TODO implement method to scrape whois data
 			*/
 		}
-//fuckkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
-	public function init_save_page(){
-		$connect = mysqli_connect("localhost","root","root", "seo");
-		if(!$connect){
-			die("Error connecting" . mysqli_error());
-		}
-		else{
-			echo "succesful connection";
-		}
-		$htmltoinsert = $this->html->plaintext;
-		$raw_data_insert= mysqli_query($connect, "INSERT INTO raw_data (url, data_type, size, scraper_data) VALUES ('$this->url', 'html', 10, 'fieiuhaiehfiewhf')");
-		if(!$raw_data_insert){
-			die("raw data insert error: " . mysqli_connect_error());
-
-		}
-		$raw_data_id = mysqli_query($connect, "SELECT last_insert_id()");
-		$webpages_insert=mysqli_query($connect, "INSERT INTO webpages (tag_title, doctype, raw_data_id) VALUES ('$this->title', 'html', '$raw_data_id')");
-		if(!$webpages_insert){
-			die("webpages insert error: " . mysqli_connect_error());
-		}
-		$parent_id = mysqli_query($connect, "SELECT last_insert_id()");
-		//Do word insert into db
-		foreach ($this->myWords as $word => $frequency) {
-			
-			$toinsert = mysqli_query($connect, "INSERT INTO words (parent_id, word, frequency, parent_type) VALUES ('$parent_id', '$word', '$frequency', 'html')");
-			if(!$toinsert){
-				die("word insert error: " .  mysqli_connect_error());
-			}
-		}
-		//Do tag insert into db
-		foreach ($this->myTags as $tag => $content) {
-		
-			$toinsert = mysqli_query($connect, "INSERT INTO tags (parent_id, tag, parent_type, content) VALUES ('$parent_id', '$tag', 'html', '$content')");
-			if(!$toinsert){
-				die("word insert error: " .  mysqli_connect_error());
-			}
-		}
-		echo "_____DATABASE SAVE COMPLETE______";
-	}
-
-	
-
-
-
 }
 
 
