@@ -1,6 +1,7 @@
 <?php
 
 //This class will do the looping through urls, storing and updating as we scrape.  Will call methods in page_scrape.php in order to find all urls on page.
+require_once "phpwhois-4.2.2/whois.main.php";
 require_once "ultimate-web-scraper/support/http.php";
 require_once "ultimate-web-scraper/support/web_browser.php";
 require_once "ultimate-web-scraper/support/simple_html_dom.php";
@@ -8,8 +9,9 @@ require_once "page_scrape.php";
 require_once "database.php";
 require_once "information.php";
 
+
 ini_set('max_execution_time', 300);
-$myCrawler = new Crawler("http://www.frontcoding.com");
+$myCrawler = new Crawler("http://www.nytimes.com/");
 $myCrawler->doCrawl();
 Class Crawler {
 
@@ -44,15 +46,12 @@ Class Crawler {
 		while (!empty($this->to_scrape)) {
 			$url = array_shift($this->to_scrape);
 			array_push($this->myVisited, $url);
-
-
 			$raw_data = new Raw_Data($url);
 			$current = new Page($raw_data->url, $raw_data->html);
 			$current->init();
-
-
-			
-			// $myDB->init_save_page($current, $hostid);
+			//$current->table_traverse(tableid, x to the right, y down); //returns contents of the specified cell
+			//$current->get_tag(specified tag) //returns an array containing all contents of the tag.
+			$myDB->init_save_page($current, $hostid);
 			$myDB->save_scripts($current->get_scripts());
 
 			$all_links_in = $current->links_in;

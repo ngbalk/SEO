@@ -30,19 +30,11 @@ class Page {
 		
 		$this->url = $url;
 		$this->html = $html;	
-	  	//$this->get_html($result);//get the body of the html, store as attribute in class (blob)
-	  	// $this->parse_title();//parse for title
-	  	// $this->get_doctype();
-	  	// $this->find_html_tags();
-	  	// $this->find_all_words();
-	  	// $this->store_links_in();
-	  	// $this->store_links_out();
+
 	  		
 
 	}
-	// public function get_html($result){
-	// 	$this->html->load($result["body"]);
-	// }
+
 	public function init(){
 		$this->parse_title();//parse for title
 	  	$this->get_doctype();
@@ -117,27 +109,48 @@ class Page {
 
 	public function get_doctype(){
 
-	// $content = file_get_contents($this->url);
- //   	$content = str_replace("\n","",$content);
- //    $get_doctype = preg_match_all('/(<!DOCTYPE.+\">)<html/i',$content,$matches);
- //    $doctype = $matches[1][0];
- //    $this->doctype = $doctype;
+
 		}
 
 	public function find_html_tags(){
 		$this->myTags = array();
 		$htmltags = array("head","meta[content]","title","body","div","a[href]","span","bold","p",
 				"header","ul","ol","li","table","tr","td","h1","h2","h3","h4","h5", "h6", "footer",
-				"img[src]","img[alt]","menu","strong", "a" , "a[href]");
+				"img[src]","img[alt]","menu","strong", "a" , "a[href]", "*[id]");
 		foreach ($htmltags as $tag) {
 			$concat = "";
 			$tagcontent = $this->html->find($tag);
 			foreach ($tagcontent as $it) {
-				$concat.= " " . $it->plaintext;
+				if($tag == "*[id]"){
+					$concat.= ", " . $it->id;
+				}
+				elseif ($tag == "img[src]") {
+					$concat.= ", " . $it->src;
+				}
+				elseif ($tag == "img[alt]"){
+					$concat.= ", " . $it->alt;
+				}
+				elseif ($tag == "a[href]"){
+					$concat.= ", " . $it->href;
+				}
+				elseif($tag == "meta[content]"){
+					$concat.= ", " . $it->content;
+				}
+				else{
+				$concat.= ", " . $it->plaintext;
+				}
 			}
 			$this->myTags[$tag] = $concat;
 			
 		}
+	}
+	public get_tag($tag){
+		$ret = array();
+		$all = $this->html->find($tag);
+		foreach ($all as $con) {
+			array_push($ret, $all->innertext);
+		}
+		return $ret;
 	}
 	public function find_all_words(){
 		$tagstocheck = array("p","h1","h2","h3","h4","h5","h6","title","li","td","alt","a");
@@ -160,18 +173,28 @@ class Page {
 	public function get_file_size(){
 			$this->size = strlen($this->html->plaintext);		
 		}
-	public function get_whois(){
-			/*
-			TODO implement method to scrape whois data
-			*/
-		}
+
 	public function get_scripts(){
-		$all_scripts = $this->html->find("script[src]");
+		$all_scripts = array();
+		foreach ($this->html->find('script') as $obj) {
+			
+	
+			$src = $obj->src;
+			array_push($all_scripts, $src);
+		}
 		return $all_scripts;
+	}
+	public function table_traverse($tableid, $xright, $ydown){
+		$table = $this->html->find("#" . $tableid);
+		$row = $table->children([$ydown]);
+		$cell = $row->children([$xright]);
+		return $cell->innertext;
+
 	}
 
 
 }
+
 	class Raw_Data {
 		public $url;
 		public $html;
@@ -189,17 +212,27 @@ class Page {
 		  	}
 
 		}
+		public function get_who_is(){
+			$whois = new Whois();
+			if(!$whois->ValidDomain($this->url) ){
+			echo ' Sorry, the domain is not valid or not supported. ';
+			}
+
+		}
 
 
-	}
+}
 	class Script {
+
 		public $url;
 		public $data;
 		 public function __construct($url){
 		 	$this->url = $url;
-		 	$this->data = file_get_contents($url);
+		 	if($url != ""){
+		 		$this->data = file_get_contents($url);
+		 	}
 		 }
-	}
+}
 
 
 

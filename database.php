@@ -94,13 +94,15 @@ Class ScrapeDB{
 	}
 	public function save_scripts($scripts){
 		foreach ($scripts as $link) {
-			if(in_array($link, $this->saved_scripts)){
+			$linktocheck = array_shift(explode("?", $link));
+			if(in_array($linktocheck, $this->saved_scripts)){
 				continue;
 			}
-			array_push($this->saved_scripts, $link);
+			array_push($this->saved_scripts, $linktocheck);
+			echo var_dump($this->saved_scripts) . "<br>     ";
 			$script = new Script($link);
-			$urltoadd = mysql_real_escape_string($script->url);
-			$datatype = mysql_real_escape_string(end(explode(".", $urltoadd)));
+			$urltoadd = mysql_real_escape_string($linktocheck);
+			$datatype = mysql_real_escape_string(end(explode(".", $linktocheck)));
 			$datatoadd = mysql_real_escape_string($script->data);
 			$sizetoadd = strlen($datatoadd);
 			$sql = "INSERT INTO raw_data (url, data_type, size, scraper_data) VALUES ('$urltoadd', '$datatype', '$sizetoadd', '$datatoadd');";
