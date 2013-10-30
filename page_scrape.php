@@ -10,9 +10,8 @@ CREATE method for getting doctype, whois data, file size, file type.  Currently 
 for sake of debugging.
 */
 
-$myPage = new Page("http://www.frontcoding.com");
-echo $myPage->title->plaintext . " " . var_dump($myPage->myWords) . var_dump($myPage->myTags) . $myPage->html->plaintext;
 class Page {
+	
 	public $html; //store as simple_html_dom
 	public $url; //should be a string
 	public $title;
@@ -27,32 +26,34 @@ class Page {
 	public $links_in;
 	public $size;
 
-	public function __construct($url){
+	public function __construct($url, $html){
 		
 		$this->url = $url;
-		$this->html = new simple_html_dom();
-		$web = new WebBrowser();
-		$result = $web->Process($url);
-	  	if (!$result["success"])  echo "Error retrieving URL.  " . $result["error"] . "\n";
-	  	else if ($result["response"]["code"] != 200)  echo "Error retrieving URL.  Server returned:  " . $result["response"]["code"] . " " . $result["response"]["meaning"] . "\n";
-	  	else
-	  		{
-	  			$this->get_html($result);//get the body of the html, store as attribute in class (blob)
-	  			$this->parse_title();//parse for title
-	  			$this->get_doctype();
-	  			$this->find_html_tags();
-	  			$this->find_all_words();
-	  			$this->store_links_in();
-	  			$this->store_links_out();
-	  			$this->init_save_page();
-	  		}
+		$this->html = $html;	
+	  	//$this->get_html($result);//get the body of the html, store as attribute in class (blob)
+	  	// $this->parse_title();//parse for title
+	  	// $this->get_doctype();
+	  	// $this->find_html_tags();
+	  	// $this->find_all_words();
+	  	// $this->store_links_in();
+	  	// $this->store_links_out();
+	  		
 
 	}
-	public function get_html($result){
-		$this->html->load($result["body"]);
+	// public function get_html($result){
+	// 	$this->html->load($result["body"]);
+	// }
+	public function init(){
+		$this->parse_title();//parse for title
+	  	$this->get_doctype();
+	  	$this->find_html_tags();
+	  	$this->find_all_words();
+	  	$this->store_links_in();
+	  	$this->store_links_out();
 	}
 	public function parse_title(){
 		$this->title = $this->html->find("title",0);
+
 	}
 
 	/*
@@ -81,15 +82,26 @@ class Page {
 	}
 	*/
 	public function store_links_in(){
+		$global_url = $GLOBALS['root_url'];
 		$linksin = array();
 		$all_links = $this->html->find("a"); //this array stores all anchors, now need to find if are links in/links out
 		foreach ($all_links as $link) {
 			$href = $link->href;
-			if(strpos($href, $this->url) !== false){
+			if(strpos($href, $global_url) !==false ){
 				array_push($linksin, $href);
 			}
+			if(substr($href, 0, 1) == "/"){
+				if(substr($global_url, -1) == "/"){
+					$strtopush = $global_url . substr($href, 1);
+				}
+				else{
+					$strtopush = $global_url . $href;
+				}	
+				array_push($linksin, $strtopush);
+			}
+
 		}
-		$this->link_in = $linksin;
+		$this->links_in = $linksin;
 	}
 	public function store_links_out(){
 		$linksout = array();
@@ -116,7 +128,7 @@ class Page {
 		$this->myTags = array();
 		$htmltags = array("head","meta[content]","title","body","div","a[href]","span","bold","p",
 				"header","ul","ol","li","table","tr","td","h1","h2","h3","h4","h5", "h6", "footer",
-				"img[src]","img[alt]","menu","strong","a");
+				"img[src]","img[alt]","menu","strong", "a" , "a[href]");
 		foreach ($htmltags as $tag) {
 			$concat = "";
 			$tagcontent = $this->html->find($tag);
@@ -153,7 +165,43 @@ class Page {
 			TODO implement method to scrape whois data
 			*/
 		}
+	public function get_scripts(){
+		$all_scripts = $this->html->find("script[src]");
+		return $all_scripts;
+	}
+
+
 }
+	class Raw_Data {
+		public $url;
+		public $html;
+		public $data;
+		public function __construct($url){
+
+			$this->url = $url;
+			$this->html = new simple_html_dom();
+			$web = new WebBrowser();
+			$result = $web->Process($url);
+		  	if (!$result["success"])  echo "Error retrieving URL.  " . $result["error"] . "\n";
+		  	else if ($result["response"]["code"] != 200)  echo "Error retrieving URL.  Server returned:  " . $result["response"]["code"] . " " . $result["response"]["meaning"] . "\n";
+		  	else{
+		  		$this->html->load($result['body']);
+		  	}
+
+		}
+
+
+	}
+	class Script {
+		public $url;
+		public $data;
+		 public function __construct($url){
+		 	$this->url = $url;
+		 	$this->data = file_get_contents($url);
+		 }
+	}
+
+
 
 
 
