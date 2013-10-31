@@ -1,6 +1,7 @@
 <?php
 
 //This class will do the looping through urls, storing and updating as we scrape.  Will call methods in page_scrape.php in order to find all urls on page.
+// download SEO from, and get the exact same results.  we want to scrape the things that they are scraping.
 require_once "phpwhois-4.2.2/whois.main.php";
 require_once "ultimate-web-scraper/support/http.php";
 require_once "ultimate-web-scraper/support/web_browser.php";
@@ -11,7 +12,7 @@ require_once "information.php";
 
 
 ini_set('max_execution_time', 300);
-$myCrawler = new Crawler("http://www.nytimes.com/");
+$myCrawler = new Crawler("http://frontcoding.com/");
 $myCrawler->doCrawl();
 Class Crawler {
 
@@ -53,6 +54,7 @@ Class Crawler {
 			//$current->get_tag(specified tag) //returns an array containing all contents of the tag.
 			$myDB->init_save_page($current, $hostid);
 			$myDB->save_scripts($current->get_scripts());
+			$myDB->save_css($current->get_css());
 
 			$all_links_in = $current->links_in;
 			foreach ($all_links_in as $key => $next) {

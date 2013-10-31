@@ -3,7 +3,9 @@
 Connect to the database
 */
 Class ScrapeDB{
+	public $saved_sheets;
 	public $saved_scripts;
+	public $host_id;
 
 
 	public function __construct($username, $password, $hostname, $database){
@@ -30,6 +32,7 @@ Class ScrapeDB{
 			die("	raw data insert error" . mysql_error());
 
 		}
+		$this->form_relations(mysql_insert_id(), $this->host_id);
 		echo "	succesful raw data insert";
 		
 
@@ -85,7 +88,8 @@ Class ScrapeDB{
 			die("Failed to initialize host " . mysql_error());
 		}
 		echo "succesful host initialization insert";
-		$id = mysql_query("SELECT last_insert_id()");
+		$id = mysql_insert_id();
+		$this->host_id = $id;
 		//saves whois data, host id, etc
 		return $id;
 	}
@@ -99,8 +103,7 @@ Class ScrapeDB{
 				continue;
 			}
 			array_push($this->saved_scripts, $linktocheck);
-			echo var_dump($this->saved_scripts) . "<br>     ";
-			$script = new Script($link);
+			$script = new Document($link);
 			$urltoadd = mysql_real_escape_string($linktocheck);
 			$datatype = mysql_real_escape_string(end(explode(".", $linktocheck)));
 			$datatoadd = mysql_real_escape_string($script->data);
@@ -112,6 +115,7 @@ Class ScrapeDB{
 			}
 			echo "Succesful Script Insert";
 			$raw_data_id = mysql_insert_id();
+			$this->form_relations($raw_data_id, $this->host_id);
 			$sql = "INSERT INTO documents (type, raw_data_id) VALUES ('$datatype', '$raw_data_id');";
 			$doc_insert = mysql_query($sql);
 			if(!$doc_insert){
@@ -121,5 +125,42 @@ Class ScrapeDB{
 		}
 
 	}
+	public function save_css($sheets){
+		foreach ($sheets as $link) {
+			
+			if(in_array($link, $this->saved_sheets)){
+				continue;
+			}
+			array_push($this->saved_sheets, $link);
+			$sheet = new Document($sheet);
+			$datatype = mysql_real_escape_string(end(explode(".", $link)));
+			$datatoadd = mysql_real_escape_string($sheet->data);
+			$sizetoadd = strlen($datatoadd);
+			$sql = "INSERT INTO raw_data (url, data_type, size, scraper_data) VALUES ('$link', '$datatype', '$sizetoadd', '$datatoadd');";
+			$result = mysql_query($sql);
+			if(!$result){
+				die("Failed to insert scripts" . mysql_error());
+			}
+			echo "Succesful Script Insert";
+			$raw_data_id = mysql_insert_id();
+			$this->form_relations($raw_data_id, $this->host_id);
+			$sql = "INSERT INTO documents (type, raw_data_id) VALUES ('$datatype', '$raw_data_id');";
+			$doc_insert = mysql_query($sql);
+			if(!$doc_insert){
+				die("Failed to insert into documents" . mysql_error());
+			}
+			echo "Succesful insert into Documents";
+
+
+		}
+	}
+	public function form_relations($raw_data_id, $host_id){
+		$sql = "INSERT INTO relationships (raw_data_id, host_id) VALUES ('$raw_data_id', '$host_id');";
+		$relations_insert = mysql_query($sql);
+		if(!$relations_insert){
+			die("failed to create relation in Relationships" . mysql_error());
+		}
+		echo "Succesful relation insert into relationships";
+	}	
 }
 

@@ -144,7 +144,7 @@ class Page {
 			
 		}
 	}
-	public get_tag($tag){
+	public function get_tag($tag){
 		$ret = array();
 		$all = $this->html->find($tag);
 		foreach ($all as $con) {
@@ -184,7 +184,15 @@ class Page {
 		}
 		return $all_scripts;
 	}
-	public function table_traverse($tableid, $xright, $ydown){
+	public function get_css(){
+		$all_css = array();
+		foreach ($this->html->find('link[type = text/css]') as $obj) {
+			$src = $obj->href;
+			array_push($all_css, $src);
+		}
+		return $all_css;
+	}
+	public function table_traverse($tableid, $xright, $ydown){  //make this apply to all tables on a page, so that we can pull any data that we need at a later point in time.
 		$table = $this->html->find("#" . $tableid);
 		$row = $table->children([$ydown]);
 		$cell = $row->children([$xright]);
@@ -222,7 +230,7 @@ class Page {
 
 
 }
-	class Script {
+	class Document {
 
 		public $url;
 		public $data;
