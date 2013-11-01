@@ -78,19 +78,11 @@ Class ScrapeDB{
 		echo "	_____DATABASE SAVE COMPLETE______";
 	}
 
-	public function init_host($rootpage){
-		$id;
-		$hostname = mysql_real_escape_string($rootpage->url);
-		echo "MY HOST NAME" . $hostname;
-		$sql = "INSERT INTO web_host (host_name) VALUES ('$hostname');";
-		$host_insert = mysql_query($sql);
-		if(!$host_insert){
-			die("Failed to initialize host " . mysql_error());
-		}
-		echo "succesful host initialization insert";
+	public function init_host($root){
+		$hostname = mysql_real_escape_string($root->url);
+		$this->save_who_is($hostname, $root->getwhois());
 		$id = mysql_insert_id();
 		$this->host_id = $id;
-		//saves whois data, host id, etc
 		return $id;
 	}
 	public function close(){
@@ -147,11 +139,33 @@ Class ScrapeDB{
 			$sql = "INSERT INTO documents (type, raw_data_id) VALUES ('$datatype', '$raw_data_id');";
 			$doc_insert = mysql_query($sql);
 			if(!$doc_insert){
-				die("Failed to insert into documents" . mysql_error());
+				die("Failed to CSS insert into documents" . mysql_error());
 			}
-			echo "Succesful insert into Documents";
+			echo "Succesful CSS insert into Documents";
 
 
+		}
+	}
+	
+	public function save_images($images){
+		foreach ($images as $src) {
+			$data_type = mysql_real_escape_string(end(explode(".", $src)));
+			$img = get_headers($src, 1);
+			$img_size = $img["Content-Length"];
+			$sql = "INSERT INTO raw_data (url, data_type, size) VALUES ('$src', '$data_type', '$img_size');";
+			$result = mysql_query($sql);
+			if(!$result){
+				die ("Failed to save images" . mysql_error());
+			}
+			echo "Succesful image save";
+			$raw_data_id = mysql_insert_id();
+			$this->form_relations($raw_data_id, $this->host_id);
+			$sql = "INSERT INTO documents (type, raw_data_id) VALUES ('$data_type', '$raw_data_id');";
+			$doc_img_insert = mysql_query($sql);
+			if(!$doc_img_insert){
+				die("Failed to insert image into Documents" . mysql_error());
+			}
+			echo "Succesfully inserted Image into Documents";
 		}
 	}
 	public function form_relations($raw_data_id, $host_id){
@@ -161,6 +175,27 @@ Class ScrapeDB{
 			die("failed to create relation in Relationships" . mysql_error());
 		}
 		echo "Succesful relation insert into relationships";
+	}
+	public function save_who_is($hostname, $who_is_data){
+		$columns = "registrar, whois_server, referral_url, name_server, status, updated_date, creation_date, expiration_date, administrative_contact, technical_contact";
+		$sql = "INSERT INTO web_host (host_name, " . $columns . ")";
+		$sql_values = " VALUES ('$hostname', ";
+		
+		$columns_array = explode(", ", $columns);
+		foreach ($columns_array as $column) {
+			$data = $who_is_data[$column];
+			$toadd = mysql_real_escape_string($data);
+			$sql_values.= "'" . $toadd . "'" .", ";
+		}
+		$sql_values = substr($sql_values, 0, -2);
+		$sql_values.=");";
+		$sql .= $sql_values;
+		$who_is_insert = mysql_query($sql);
+		if(!$who_is_insert){
+			die("Failed to insert who is data and initialize host  <br>" . $sql . "<br>" . mysql_error());
+		}
+		echo "Succesful Insert of Who Is Data and host initialization";
+		
 	}	
 }
 

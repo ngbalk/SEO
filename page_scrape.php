@@ -6,8 +6,9 @@ Author: Nick Balkissoon
 Email: ngbalk@gmail.com
 
 TODO: 
-CREATE method for getting doctype, whois data, file size, file type.  Currently we are inserting into the database using static attributes
-for sake of debugging.
+Get CSS files still not really sure how to do that.
+Create a View?
+Ask Paulus for the next step.
 */
 
 class Page {
@@ -16,8 +17,6 @@ class Page {
 	public $url; //should be a string
 	public $title;
 	public $doctype; //not important, maybe we should delete this
-	public $links_count_in; //no longer needed but will keep for now anyway for sake of debugging
-	public $links_count_out; //no longer needed
 	public $timestamp;
 	public $websiteid; //not sure how this will be determined
 	public $myTags;
@@ -37,7 +36,6 @@ class Page {
 
 	public function init(){
 		$this->parse_title();//parse for title
-	  	$this->get_doctype();
 	  	$this->find_html_tags();
 	  	$this->find_all_words();
 	  	$this->store_links_in();
@@ -48,31 +46,6 @@ class Page {
 
 	}
 
-	/*
-	public function parse_linksin(){
-		$linksin = array();
-		$all_links = $this->html->find("a"); //this array stores all anchors, now need to find if are links in/links out
-		foreach ($all_links as $link) {
-			$href = $link->href;
-			if(strpos($href, $this->url) !== false){
-				array_push($linksin, $href);
-			}
-		}
-			$this->links_count_in = count($linksin);
-	}
-	public function parse_linksout(){
-		$linksout = array();
-		$all_links = $this->html->find("a"); 
-		foreach ($all_links as $link) {
-			$href = $link->href;
-			if(strpos($href, $this->url) == false){
-				array_push($linksout, $href);
-			}
-		}
-			$this->links_count_out = count($linksout);
-
-	}
-	*/
 	public function store_links_in(){
 		$global_url = $GLOBALS['root_url'];
 		$linksin = array();
@@ -96,21 +69,22 @@ class Page {
 		$this->links_in = $linksin;
 	}
 	public function store_links_out(){
+		$myurl = $this->url;
+		$mydomain = getRegisteredDomain(parse_url($myurl, PHP_URL_HOST));
 		$linksout = array();
 		$all_links = $this->html->find("a"); 
 		foreach ($all_links as $link) {
 			$href = $link->href;
-			if(strpos($href, $this->url) == false){
+			@$nextdomain = getRegisteredDomain(parse_url($href, PHP_URL_HOST));
+			if($nextdomain != "" && $nextdomain != $mydomain){
 				array_push($linksout, $href);
 			}
+
 		}
 		$this->links_out = $linksout;
+		return $linksout;
 	}
 
-	public function get_doctype(){
-
-
-		}
 
 	public function find_html_tags(){
 		$this->myTags = array();
@@ -190,7 +164,16 @@ class Page {
 			$src = $obj->href;
 			array_push($all_css, $src);
 		}
+
 		return $all_css;
+	}
+	public function get_images(){
+		$all_img = array();
+		foreach ($this->html->find('img') as $obj) {
+			$src = $obj->src;
+			array_push($all_img, $src);
+		}
+		return $all_img;
 	}
 	public function table_traverse($tableid, $xright, $ydown){  //make this apply to all tables on a page, so that we can pull any data that we need at a later point in time.
 		$table = $this->html->find("#" . $tableid);
@@ -198,6 +181,25 @@ class Page {
 		$cell = $row->children([$xright]);
 		return $cell->innertext;
 
+	}
+	public function get_all_table_data(){
+		$tables_array = array();
+		$tables = $this->html->find("table");
+		foreach ($tables as $table) {
+			$rows_array = array();
+			$rows = $table->find("tr");
+			foreach ($rows as $row) {
+				$cells = $row->find("td");
+				$cells_array = array();
+				foreach ($cells as $cell) {
+					$value = $cell->innertext;
+					array_push($cells_array, $value);
+				}
+				array_push($rows_array, $cells_array);
+			}
+			array_push($tables_array, $rows_array);
+		}
+		return $tables_array;
 	}
 
 
@@ -220,13 +222,69 @@ class Page {
 		  	}
 
 		}
-		public function get_who_is(){
-			$whois = new Whois();
-			if(!$whois->ValidDomain($this->url) ){
-			echo ' Sorry, the domain is not valid or not supported. ';
-			}
+public function getwhois(){
+	$query = $this->url;
+	 if(!is_numeric($query[0])){
+	 @$query = getRegisteredDomain(parse_url($query, PHP_URL_HOST));
+	 }
+	$whois = new Whois();
 
-		}
+	$insert_array = array();
+	$to_insert = "";
+	$values = "registrar, whois_server, referral_url, name_server, status, updated_date, creation_data, expiration_date, administrative_contact, technical_contact";
+	$result = $whois->Lookup($query);
+	$regyinfo = $result['regyinfo'];
+	$regrinfo = $result['regrinfo'];
+	$domain = $regrinfo['domain'];
+
+	$insert_array['whois_server'] = $regyinfo['referrer'];
+	$insert_array['registrar'] = $regyinfo['registrar'];
+	$insert_array['referral_url'] = $regyinfo['referrer'];
+	$insert_array['host_name'] = $domain['name'];
+	$insert_array['name_server'] = "";
+
+	foreach ($domain['nserver'] as $server => $address) {
+		$insert_array['name_server'] .= $server . ": " . $address . ", ";
+	}
+	$insert_array['status'] = "";
+
+	foreach ($domain['status'] as $status) {
+		$insert_array['status'] .= $status. ", ";
+	}
+
+	$insert_array['updated_date'] = $domain['changed'];
+	$insert_array['creation_date'] = $domain['created'];
+	$insert_array['expiration_date'] = $domain['expires'];
+
+	$admin = $regrinfo['admin'];
+	$tech = $regrinfo['tech'];
+
+	$insert_array['administrative_contact'] = "";
+	$insert_array['administrative_contact'] .=  " " . $admin['organization'];
+	$insert_array['administrative_contact'] .=  " " . $admin['name'];
+	$insert_array['administrative_contact'] .=  " " . $admin['type'];
+	foreach ($admin['address'] as $info) {
+		$insert_array['administrative_contact'] .=  " " . $info;
+	}
+	$insert_array['administrative_contact'] .=  " " . $admin['phone'];
+	$insert_array['administrative_contact'] .=  " " . $admin['fax'];
+	$insert_array['administrative_contact'] .=  " " . $admin['email'];
+
+
+	$insert_array['technical_contact'] = "";
+	$insert_array['technical_contact'] .= " " .  $tech['organization'];
+	$insert_array['technical_contact'] .=  " " . $tech['name'];
+	$insert_array['technical_contact'] .=  " " . $tech['type'];
+	foreach ($tech['address'] as $info) {
+		$insert_array['technical_contact'] .=  " " . $info;
+	}
+	$insert_array['technical_contact'] .= " " .  $tech['phone'];
+	$insert_array['technical_contact'] .=  " " . $tech['fax'];
+	$insert_array['technical_contact'] .=  " " . $tech['email'];
+	return $insert_array;
+
+
+}
 
 
 }

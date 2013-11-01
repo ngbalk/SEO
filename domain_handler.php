@@ -1,21 +1,23 @@
 <?php
 
 //This class will do the looping through urls, storing and updating as we scrape.  Will call methods in page_scrape.php in order to find all urls on page.
-// download SEO from, and get the exact same results.  we want to scrape the things that they are scraping.
+// download SEO frog, and get the exact same results.  we want to scrape the things that they are scraping.
 require_once "phpwhois-4.2.2/whois.main.php";
+require_once "phpwhois-4.2.2/whois.utils.php";
+require_once("registered-domains-php-master/effectiveTLDs.inc.php");
+require_once("registered-domains-php-master/regDomain.inc.php");
 require_once "ultimate-web-scraper/support/http.php";
 require_once "ultimate-web-scraper/support/web_browser.php";
 require_once "ultimate-web-scraper/support/simple_html_dom.php";
 require_once "page_scrape.php";
 require_once "database.php";
-require_once "information.php";
 
-
-ini_set('max_execution_time', 300);
-$myCrawler = new Crawler("http://frontcoding.com/");
+$query = $_POST['query'];
+ini_set('max_execution_time', 400);
+$myCrawler = new Crawler($query);
 $myCrawler->doCrawl();
 Class Crawler {
-
+	public $myRootData;
 	public $myRootUrl;
 	public $myRootPage;
 	public $to_scrape; //Queue that stores the urls that we still need to visit. will use methods array_push(array, value) and array_shift() which pops off queued value
@@ -29,11 +31,9 @@ Class Crawler {
 		$this->myRootUrl = $root;
 		
 		$root_data = new Raw_Data($root);
+		$this->myRootData = $root_data;
 		$this->myRootPage = new Page($root, $root_data->html);
 		$this->myRootPage->init();
-		
-		
-		echo "LINKS IN" . var_dump($this->myRootPage->links_in) . "<br>" ;
 
 		foreach ($this->myRootPage->links_in as $key => $value) {
 			if(!in_array($value, $this->to_scrape)){
@@ -42,8 +42,9 @@ Class Crawler {
 		}
 	}
 	public function doCrawl(){
-		$myDB = new ScrapeDB($GLOBALS['username'], $GLOBALS['password'], $GLOBALS['hostname'], $GLOBALS['database']);
-		$hostid = $myDB->init_host($this->myRootPage);
+		include "information.php";
+		$myDB = new ScrapeDB($username, $password, $hostname, $database);
+		$hostid = $myDB->init_host($this->myRootData);
 		while (!empty($this->to_scrape)) {
 			$url = array_shift($this->to_scrape);
 			array_push($this->myVisited, $url);
@@ -55,6 +56,7 @@ Class Crawler {
 			$myDB->init_save_page($current, $hostid);
 			$myDB->save_scripts($current->get_scripts());
 			$myDB->save_css($current->get_css());
+			$myDB->save_images($current->get_images());
 
 			$all_links_in = $current->links_in;
 			foreach ($all_links_in as $key => $next) {
