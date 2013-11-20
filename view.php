@@ -7,3 +7,13 @@
 </form>
 
 </body>
+<?php
+			$type_array = array(
+				IMAGETYPE_PNG => "png",
+				IMAGETYPE_JPEG => "jpeg",
+				IMAGETYPE_GIF => "gif",
+				) ;
+$my = exif_imagetype('http://www.gold-happ.com/CMS.aspx?mode=getfile&fid=238');
+ echo IMAGETYPE_PNG;
+ echo $type_array[$my];
+?>

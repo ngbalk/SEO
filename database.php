@@ -1,29 +1,27 @@
 <?php
-/*
-Connect to the database
-*/
 Class ScrapeDB{
 	public $saved_sheets;
 	public $saved_scripts;
+	public $saved_images;
 	public $host_id;
 
 
 	public function __construct($username, $password, $hostname, $database){
+		$this->saved_images = array();
 		$this->saved_scripts = array();
+		$this->saved_sheets = array();
 
 		$dbhandle = mysql_connect($hostname, $username, $password)
 			or die("Unable to connect to MySQL host");
-		echo "Connected to MySQL host<br>";
 
 		$selected = mysql_select_db($database, $dbhandle)
 			or die("Could not select db");
-		echo "Selected db succesfully";
 		}
 	
 	public function init_save_page($page, $hostid){
 		//raw_data variables
 		$urltoinsert = mysql_real_escape_string($page->url);
-		$htmltoinsert = mysql_real_escape_string($page->html->plaintext);
+		$htmltoinsert = mysql_real_escape_string($page->html->innertext);
 		$datatype = "html";
 		$numbytes = strlen($htmltoinsert);
 		//end
@@ -33,22 +31,24 @@ Class ScrapeDB{
 
 		}
 		$this->form_relations(mysql_insert_id(), $this->host_id);
-		echo "	succesful raw data insert";
 		
 
-		//webpages variables
-		
-		$pagetitle = mysql_real_escape_string($page->title->plaintext);
-		
-		
+		if(is_object($page) && isset($page)){
+			if(is_object($page->title)){
+				$pagetitle = mysql_real_escape_string($page->title->innertext);
+			}
+			else {
+				$pagetitle = "--No Title--";
+			}
+		}
+		else{
+			$pagetitle = "--No Title--";
+		}	
 		$pagetype = "html";
-		//$raw_data_id = explode("#", mysql_query("SELECT last_insert_id();"))[1];
-		//end
 		$webpages_insert=mysql_query("INSERT INTO webpages (tag_title, doctype, raw_data_id) VALUES ('$pagetitle', '$pagetype', last_insert_id());");
 		if(!$webpages_insert){
 			die("	webpages insert error: " . mysql_error());
 		}
-		echo "	succesful webpage insert";
 
 		//word variables
 		$parent_id = mysql_insert_id();
@@ -61,7 +61,6 @@ Class ScrapeDB{
 				die("	word insert error: " . $word .   mysql_error());
 			}
 		}
-		echo "	succesful word insert";
 
 		//tag variables
 
@@ -74,8 +73,6 @@ Class ScrapeDB{
 				die("	tag insert error: " . $tag . $content .  mysql_error());
 			}
 		}
-		echo "	succesful tag insert";
-		echo "	_____DATABASE SAVE COMPLETE______";
 	}
 
 	public function init_host($root){
@@ -105,7 +102,6 @@ Class ScrapeDB{
 			if(!$result){
 				die("Failed to insert scripts" . mysql_error());
 			}
-			echo "Succesful Script Insert";
 			$raw_data_id = mysql_insert_id();
 			$this->form_relations($raw_data_id, $this->host_id);
 			$sql = "INSERT INTO documents (type, raw_data_id) VALUES ('$datatype', '$raw_data_id');";
@@ -113,7 +109,6 @@ Class ScrapeDB{
 			if(!$doc_insert){
 				die("Failed to insert into documents" . mysql_error());
 			}
-			echo "Succesful insert into Documents";
 		}
 
 	}
@@ -133,7 +128,6 @@ Class ScrapeDB{
 			if(!$result){
 				die("Failed to insert scripts" . mysql_error());
 			}
-			echo "Succesful Script Insert";
 			$raw_data_id = mysql_insert_id();
 			$this->form_relations($raw_data_id, $this->host_id);
 			$sql = "INSERT INTO documents (type, raw_data_id) VALUES ('$datatype', '$raw_data_id');";
@@ -141,15 +135,29 @@ Class ScrapeDB{
 			if(!$doc_insert){
 				die("Failed to CSS insert into documents" . mysql_error());
 			}
-			echo "Succesful CSS insert into Documents";
 
 
 		}
 	}
 	
 	public function save_images($images){
+			$type_array = array(
+				IMAGETYPE_PNG => "png",
+				IMAGETYPE_JPEG => "jpeg",
+				IMAGETYPE_GIF => "gif",
+				);
 		foreach ($images as $src) {
-			$data_type = mysql_real_escape_string(end(explode(".", $src)));
+			if(in_array($src, $this->saved_images)){
+				continue;
+			}
+			array_push($this->saved_images, $src);
+			$checktype = exif_imagetype($src);
+			if(!array_search($checktype, $type_array)){
+				$data_type = "Other Image Type";
+			}
+			else{
+				$data_type = $type_array[$checktype];
+			}
 			$img = get_headers($src, 1);
 			$img_size = $img["Content-Length"];
 			$sql = "INSERT INTO raw_data (url, data_type, size) VALUES ('$src', '$data_type', '$img_size');";
@@ -157,7 +165,6 @@ Class ScrapeDB{
 			if(!$result){
 				die ("Failed to save images" . mysql_error());
 			}
-			echo "Succesful image save";
 			$raw_data_id = mysql_insert_id();
 			$this->form_relations($raw_data_id, $this->host_id);
 			$sql = "INSERT INTO documents (type, raw_data_id) VALUES ('$data_type', '$raw_data_id');";
@@ -165,7 +172,6 @@ Class ScrapeDB{
 			if(!$doc_img_insert){
 				die("Failed to insert image into Documents" . mysql_error());
 			}
-			echo "Succesfully inserted Image into Documents";
 		}
 	}
 	public function form_relations($raw_data_id, $host_id){
@@ -174,7 +180,6 @@ Class ScrapeDB{
 		if(!$relations_insert){
 			die("failed to create relation in Relationships" . mysql_error());
 		}
-		echo "Succesful relation insert into relationships";
 	}
 	public function save_who_is($hostname, $who_is_data){
 		$columns = "registrar, whois_server, referral_url, name_server, status, updated_date, creation_date, expiration_date, administrative_contact, technical_contact";
@@ -183,7 +188,12 @@ Class ScrapeDB{
 		
 		$columns_array = explode(", ", $columns);
 		foreach ($columns_array as $column) {
+			if(!array_key_exists($column, $who_is_data)){
+				$data = "--Not Specified--";
+			}
+			else{
 			$data = $who_is_data[$column];
+			}
 			$toadd = mysql_real_escape_string($data);
 			$sql_values.= "'" . $toadd . "'" .", ";
 		}
@@ -194,7 +204,6 @@ Class ScrapeDB{
 		if(!$who_is_insert){
 			die("Failed to insert who is data and initialize host  <br>" . $sql . "<br>" . mysql_error());
 		}
-		echo "Succesful Insert of Who Is Data and host initialization";
 		
 	}	
 }

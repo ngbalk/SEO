@@ -7,8 +7,6 @@ Email: ngbalk@gmail.com
 
 TODO: 
 Get CSS files still not really sure how to do that.
-Create a View?
-Ask Paulus for the next step.
 */
 
 class Page {
@@ -26,14 +24,9 @@ class Page {
 	public $size;
 
 	public function __construct($url, $html){
-		
 		$this->url = $url;
 		$this->html = $html;	
-
-	  		
-
 	}
-
 	public function init(){
 		$this->parse_title();//parse for title
 	  	$this->find_html_tags();
@@ -43,34 +36,38 @@ class Page {
 	}
 	public function parse_title(){
 		$this->title = $this->html->find("title",0);
-
 	}
-
 	public function store_links_in(){
 		$global_url = $GLOBALS['root_url'];
 		$linksin = array();
 		$all_links = $this->html->find("a"); //this array stores all anchors, now need to find if are links in/links out
 		foreach ($all_links as $link) {
 			$href = $link->href;
-			if(strpos($href, $global_url) !==false ){
+			$href = ConvertRelativeToAbsoluteURL(ExtractURL($global_url), $href);
+			if(ExtractURL($href)['host'] == ExtractURL($global_url)['host']){
 				array_push($linksin, $href);
 			}
-			if(substr($href, 0, 1) == "/"){
-				if(substr($global_url, -1) == "/"){
-					$strtopush = $global_url . substr($href, 1);
-				}
-				else{
-					$strtopush = $global_url . $href;
-				}	
-				array_push($linksin, $strtopush);
+			else{
+				continue;
 			}
-
+			// if(strpos($href, $global_url) !==false ){
+			// 	array_push($linksin, $href);
+			// }
+			// if(substr($href, 0, 1) == "/" || substr($href, 0, 4) != 'http'){
+			// 	if(substr($global_url, -1) == "/"){
+			// 		$strtopush = $global_url . substr($href, 1);
+			// 	}
+			// 	else{
+			// 		$strtopush = $global_url . $href;
+			// 	}	
+			// 	array_push($linksin, $strtopush);
+			// }
 		}
 		$this->links_in = $linksin;
 	}
 	public function store_links_out(){
 		$myurl = $this->url;
-		$mydomain = getRegisteredDomain(parse_url($myurl, PHP_URL_HOST));
+		@$mydomain = getRegisteredDomain(parse_url($myurl, PHP_URL_HOST));
 		$linksout = array();
 		$all_links = $this->html->find("a"); 
 		foreach ($all_links as $link) {
@@ -79,7 +76,6 @@ class Page {
 			if($nextdomain != "" && $nextdomain != $mydomain){
 				array_push($linksout, $href);
 			}
-
 		}
 		$this->links_out = $linksout;
 		return $linksout;
@@ -114,8 +110,7 @@ class Page {
 				$concat.= ", " . $it->plaintext;
 				}
 			}
-			$this->myTags[$tag] = $concat;
-			
+			$this->myTags[$tag] = $concat;			
 		}
 	}
 	public function get_tag($tag){
@@ -134,6 +129,9 @@ class Page {
 				foreach ($elements as $element) {
 					$words = explode(" ", $element->plaintext);
 					foreach ($words as $word) {
+						if($word == "" || $word == " "){
+							continue;
+						}
 						if(!array_key_exists($word, $wordfreqs)){
 							$wordfreqs[$word] = 0;
 						}
@@ -151,9 +149,8 @@ class Page {
 	public function get_scripts(){
 		$all_scripts = array();
 		foreach ($this->html->find('script') as $obj) {
-			
-	
 			$src = $obj->src;
+			$src = ConvertRelativeToAbsoluteURL(ExtractURL($GLOBALS['root_url']), $src);
 			array_push($all_scripts, $src);
 		}
 		return $all_scripts;
@@ -171,11 +168,12 @@ class Page {
 		$all_img = array();
 		foreach ($this->html->find('img') as $obj) {
 			$src = $obj->src;
+			$src = ConvertRelativeToAbsoluteURL(ExtractURL($GLOBALS['root_url']), $src);
 			array_push($all_img, $src);
 		}
 		return $all_img;
 	}
-	public function table_traverse($tableid, $xright, $ydown){  //make this apply to all tables on a page, so that we can pull any data that we need at a later point in time.
+	public function table_traverse($tableid, $xright, $ydown){  
 		$table = $this->html->find("#" . $tableid);
 		$row = $table->children([$ydown]);
 		$cell = $row->children([$xright]);
@@ -209,16 +207,25 @@ class Page {
 		public $url;
 		public $html;
 		public $data;
+		public $valid;
 		public function __construct($url){
 
 			$this->url = $url;
 			$this->html = new simple_html_dom();
 			$web = new WebBrowser();
 			$result = $web->Process($url);
-		  	if (!$result["success"])  echo "Error retrieving URL.  " . $result["error"] . "\n";
-		  	else if ($result["response"]["code"] != 200)  echo "Error retrieving URL.  Server returned:  " . $result["response"]["code"] . " " . $result["response"]["meaning"] . "\n";
+		  	if (!$result["success"]) {
+		  		echo "Error retrieving URL.  " . $result["error"] . "\n" . $url;
+		  		$this->valid = false;
+		  	}
+		  	else if ($result["response"]["code"] != 200) {
+		  		echo "Error retrieving URL.  Server returned:  " . $result["response"]["code"] . " " . $result["response"]["meaning"] . "\n" . $url;
+		  		$this->valid = false;
+		  	}
 		  	else{
 		  		$this->html->load($result['body']);
+		  		$this->valid = true;
+		  		
 		  	}
 
 		}
@@ -256,31 +263,35 @@ public function getwhois(){
 	$insert_array['creation_date'] = $domain['created'];
 	$insert_array['expiration_date'] = $domain['expires'];
 
-	$admin = $regrinfo['admin'];
-	$tech = $regrinfo['tech'];
-
-	$insert_array['administrative_contact'] = "";
-	$insert_array['administrative_contact'] .=  " " . $admin['organization'];
-	$insert_array['administrative_contact'] .=  " " . $admin['name'];
-	$insert_array['administrative_contact'] .=  " " . $admin['type'];
-	foreach ($admin['address'] as $info) {
-		$insert_array['administrative_contact'] .=  " " . $info;
+	
+	if(array_key_exists('admin', $regrinfo)){
+		$admin = $regrinfo['admin'];
+		$insert_array['administrative_contact'] = "";
+		$insert_array['administrative_contact'] .=  " " . $admin['organization'];
+		$insert_array['administrative_contact'] .=  " " . $admin['name'];
+		$insert_array['administrative_contact'] .=  " " . $admin['type'];
+		foreach ($admin['address'] as $info) {
+			$insert_array['administrative_contact'] .=  " " . $info;
+		}
+		$insert_array['administrative_contact'] .=  " " . $admin['phone'];
+		$insert_array['administrative_contact'] .=  " " . $admin['fax'];
+		$insert_array['administrative_contact'] .=  " " . $admin['email'];
 	}
-	$insert_array['administrative_contact'] .=  " " . $admin['phone'];
-	$insert_array['administrative_contact'] .=  " " . $admin['fax'];
-	$insert_array['administrative_contact'] .=  " " . $admin['email'];
 
-
-	$insert_array['technical_contact'] = "";
-	$insert_array['technical_contact'] .= " " .  $tech['organization'];
-	$insert_array['technical_contact'] .=  " " . $tech['name'];
-	$insert_array['technical_contact'] .=  " " . $tech['type'];
-	foreach ($tech['address'] as $info) {
-		$insert_array['technical_contact'] .=  " " . $info;
+	
+	if(array_key_exists('tech', $regrinfo)){
+		$tech = $regrinfo['tech'];
+		$insert_array['technical_contact'] = "";
+		$insert_array['technical_contact'] .= " " .  $tech['organization'];
+		$insert_array['technical_contact'] .=  " " . $tech['name'];
+		$insert_array['technical_contact'] .=  " " . $tech['type'];
+		foreach ($tech['address'] as $info) {
+			$insert_array['technical_contact'] .=  " " . $info;
+		}
+		$insert_array['technical_contact'] .= " " .  $tech['phone'];
+		$insert_array['technical_contact'] .=  " " . $tech['fax'];
+		$insert_array['technical_contact'] .=  " " . $tech['email'];
 	}
-	$insert_array['technical_contact'] .= " " .  $tech['phone'];
-	$insert_array['technical_contact'] .=  " " . $tech['fax'];
-	$insert_array['technical_contact'] .=  " " . $tech['email'];
 	return $insert_array;
 
 
