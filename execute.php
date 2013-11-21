@@ -1,5 +1,5 @@
 <?php
-ini_set('max_execution_time', 1000);
+ini_set('max_execution_time', 1000000);
 require_once "phpwhois-4.2.2/whois.main.php";
 require_once "phpwhois-4.2.2/whois.utils.php";
 require_once("registered-domains-php-master/effectiveTLDs.inc.php");
@@ -15,20 +15,20 @@ require_once "domain_handler.php";
 // while($row = fgetcsv($handle)) {
 // 	foreach ($row as $url) {
 // 		if(substr($url, 0, 4) == "http"){
-// 			echo $query . '<br>';
 // 			$query = $url;
+// 			echo $query . '<br>';
 // 			$myCrawler = new Crawler($query);
-// 			$myCrawler->doCrawl();			
+// 			if($myCrawler->doCrawl()) echo "Crawl Complete";			
 // 		}
 // 	}
 // }
+// echo "All Crawls Complete";
 // fclose($handle);
 
-$myCrawler = new Crawler('http://www.holle.cn/');
+$myCrawler = new Crawler('http://www.chbimbosan.com/');
 if($myCrawler->doCrawl()){
 	echo "Crawl Complete";
 }
-// $ret = ConvertRelativeToAbsoluteURL(ExtractURL('http://www.google.com'), 'http://www.espn.com/index.php');
-// echo var_dump($ret);
-// $thisthing = ExtractURL('node/56');
-// echo var_dump($thisthing['host']);
+
+
+//A2 Platinum,A2 ??,http://www.a2milk.com.au/faq.php,New Zealand,A2-Platinum Folder (1 pic)

@@ -28,11 +28,11 @@ class Page {
 		$this->html = $html;	
 	}
 	public function init(){
-		$this->parse_title();//parse for title
-	  	$this->find_html_tags();
-	  	$this->find_all_words();
+		$this->parse_title();
+	  	//$this->find_html_tags();
+	  	//$this->find_all_words();
 	  	$this->store_links_in();
-	  	$this->store_links_out();
+	  	$this->get_file_size();
 	}
 	public function parse_title(){
 		$this->title = $this->html->find("title",0);
@@ -50,18 +50,6 @@ class Page {
 			else{
 				continue;
 			}
-			// if(strpos($href, $global_url) !==false ){
-			// 	array_push($linksin, $href);
-			// }
-			// if(substr($href, 0, 1) == "/" || substr($href, 0, 4) != 'http'){
-			// 	if(substr($global_url, -1) == "/"){
-			// 		$strtopush = $global_url . substr($href, 1);
-			// 	}
-			// 	else{
-			// 		$strtopush = $global_url . $href;
-			// 	}	
-			// 	array_push($linksin, $strtopush);
-			// }
 		}
 		$this->links_in = $linksin;
 	}
@@ -89,25 +77,25 @@ class Page {
 				"img[src]","img[alt]","menu","strong", "a" , "a[href]", "*[id]");
 		foreach ($htmltags as $tag) {
 			$concat = "";
-			$tagcontent = $this->html->find($tag);
-			foreach ($tagcontent as $it) {
+			$elements = $this->html->find($tag);
+			foreach ($elements as $element) {
 				if($tag == "*[id]"){
-					$concat.= ", " . $it->id;
+					$concat.= ", " . $element->id;
 				}
 				elseif ($tag == "img[src]") {
-					$concat.= ", " . $it->src;
+					$concat.= ", " . $element->src;
 				}
 				elseif ($tag == "img[alt]"){
-					$concat.= ", " . $it->alt;
+					$concat.= ", " . $element->alt;
 				}
 				elseif ($tag == "a[href]"){
-					$concat.= ", " . $it->href;
+					$concat.= ", " . $element->href;
 				}
 				elseif($tag == "meta[content]"){
-					$concat.= ", " . $it->content;
+					$concat.= ", " . $element->content;
 				}
 				else{
-				$concat.= ", " . $it->plaintext;
+					$concat.= ", " . $element->innertext;
 				}
 			}
 			$this->myTags[$tag] = $concat;			
@@ -126,24 +114,26 @@ class Page {
 		$wordfreqs = array();
 		foreach ($tagstocheck as $tag) {
 			$elements= $this->html->find($tag);
-				foreach ($elements as $element) {
-					$words = explode(" ", $element->plaintext);
-					foreach ($words as $word) {
-						if($word == "" || $word == " "){
-							continue;
+				if($elements!=NULL){
+					foreach ($elements as $element) {
+						$words = explode(" ", $element->plaintext);
+						foreach ($words as $word) {
+							if($word == "" || $word == " "){
+								continue;
+							}
+							if(!array_key_exists($word, $wordfreqs)){
+								$wordfreqs[$word] = 0;
+							}
+							$wordfreqs[$word]+=1;
 						}
-						if(!array_key_exists($word, $wordfreqs)){
-							$wordfreqs[$word] = 0;
-						}
-						$wordfreqs[$word]+=1;
 					}
-				}
+			  	}
 			}
 			arsort($wordfreqs);
 			$this->myWords=$wordfreqs;
 		}
 	public function get_file_size(){
-			$this->size = strlen($this->html->plaintext);		
+		$this->size = strlen($this->html->plaintext);
 		}
 
 	public function get_scripts(){

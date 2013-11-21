@@ -1,6 +1,7 @@
 <?php
 
 Class Crawler {
+	set_time_limit(900);
 	public $myRootData;
 	public $myRootUrl;
 	public $myRootPage;
