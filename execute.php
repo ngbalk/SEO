@@ -10,25 +10,25 @@ require_once "ultimate-web-scraper/support/simple_html_dom.php";
 require_once "page_scrape.php";
 require_once "database.php";
 require_once "domain_handler.php";
-// $sourcefile = "Milkpowder-new.csv";
-// $handle = fopen($sourcefile, "r");
-// while($row = fgetcsv($handle)) {
-// 	foreach ($row as $url) {
-// 		if(substr($url, 0, 4) == "http"){
-// 			$query = $url;
-// 			echo $query . '<br>';
-// 			$myCrawler = new Crawler($query);
-// 			if($myCrawler->doCrawl()) echo "Crawl Complete";			
-// 		}
-// 	}
-// }
-// echo "All Crawls Complete";
-// fclose($handle);
-
-$myCrawler = new Crawler('http://www.chbimbosan.com/');
-if($myCrawler->doCrawl()){
-	echo "Crawl Complete";
+$sourcefile = "Milkpowder-new.csv";
+$handle = fopen($sourcefile, "r");
+while($row = fgetcsv($handle)) {
+	foreach ($row as $url) {
+		if(substr($url, 0, 4) == "http"){
+			$query = $url;
+			echo $query . '<br>';
+			$myCrawler = new Crawler($query);
+			if($myCrawler->doCrawl()) echo "Crawl Complete";			
+		}
+	}
 }
+echo "All Crawls Complete";
+fclose($handle);
+
+// $myCrawler = new Crawler('http://www.a2milk.com.au/faq.php');
+// if($myCrawler->doCrawl()){
+// 	echo "Crawl Complete";
+// }
 
 
 //A2 Platinum,A2 ??,http://www.a2milk.com.au/faq.php,New Zealand,A2-Platinum Folder (1 pic)

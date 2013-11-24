@@ -29,26 +29,30 @@ class Page {
 	}
 	public function init(){
 		$this->parse_title();
-	  	//$this->find_html_tags();
-	  	//$this->find_all_words();
+	  	$this->find_html_tags();
+	  	$this->find_all_words();
 	  	$this->store_links_in();
 	  	$this->get_file_size();
 	}
 	public function parse_title(){
-		$this->title = $this->html->find("title",0);
+		if(is_object($this->html)){
+			$this->title = $this->html->find("title",0);
+		}
+		else{
+			$this->title = "--Unable to read title--";
+		}
 	}
 	public function store_links_in(){
 		$global_url = $GLOBALS['root_url'];
 		$linksin = array();
-		$all_links = $this->html->find("a"); //this array stores all anchors, now need to find if are links in/links out
+		$all_links = $this->html->find("a"); 
 		foreach ($all_links as $link) {
 			$href = $link->href;
-			$href = ConvertRelativeToAbsoluteURL(ExtractURL($global_url), $href);
-			if(ExtractURL($href)['host'] == ExtractURL($global_url)['host']){
-				array_push($linksin, $href);
-			}
-			else{
-				continue;
+			if($this->validate_url($href)){
+				$href = ConvertRelativeToAbsoluteURL(ExtractURL($global_url), $href);
+				if(ExtractURL($href)['host'] == ExtractURL($global_url)['host']){
+					array_push($linksin, $href);
+				}
 			}
 		}
 		$this->links_in = $linksin;
@@ -74,15 +78,12 @@ class Page {
 		$this->myTags = array();
 		$htmltags = array("head","meta[content]","title","body","div","a[href]","span","bold","p",
 				"header","ul","ol","li","table","tr","td","h1","h2","h3","h4","h5", "h6", "footer",
-				"img[src]","img[alt]","menu","strong", "a" , "a[href]", "*[id]");
+				"img[src]","img[alt]","menu","strong","a","a[href]");
 		foreach ($htmltags as $tag) {
 			$concat = "";
 			$elements = $this->html->find($tag);
 			foreach ($elements as $element) {
-				if($tag == "*[id]"){
-					$concat.= ", " . $element->id;
-				}
-				elseif ($tag == "img[src]") {
+				if ($tag == "img[src]") {
 					$concat.= ", " . $element->src;
 				}
 				elseif ($tag == "img[alt]"){
@@ -94,7 +95,7 @@ class Page {
 				elseif($tag == "meta[content]"){
 					$concat.= ", " . $element->content;
 				}
-				else{
+				elseif($this->validate_word($element->innertext)){
 					$concat.= ", " . $element->innertext;
 				}
 			}
@@ -102,35 +103,27 @@ class Page {
 		}
 	}
 	public function get_tag($tag){
-		$ret = array();
-		$all = $this->html->find($tag);
-		foreach ($all as $con) {
-			array_push($ret, $all->innertext);
+		$tag_content_array = array();
+		$elements = $this->html->find($tag);
+		foreach ($elements as $element) {
+			array_push($tag_content_array, $element->innertext);
 		}
-		return $ret;
+		return $tag_content_array;
 	}
 	public function find_all_words(){
-		$tagstocheck = array("p","h1","h2","h3","h4","h5","h6","title","li","td","alt","a");
-		$wordfreqs = array();
-		foreach ($tagstocheck as $tag) {
-			$elements= $this->html->find($tag);
-				if($elements!=NULL){
-					foreach ($elements as $element) {
-						$words = explode(" ", $element->plaintext);
-						foreach ($words as $word) {
-							if($word == "" || $word == " "){
-								continue;
-							}
-							if(!array_key_exists($word, $wordfreqs)){
-								$wordfreqs[$word] = 0;
-							}
-							$wordfreqs[$word]+=1;
-						}
+			$words = preg_split('/\s/', $this->html->find("body",0)->plaintext);
+			$wordfreqs = array();
+			foreach ($words as $word) {
+				$word = trim($word);
+				if ($this->validate_word($word)) {
+					if(!array_key_exists($word, $wordfreqs)){
+						$wordfreqs[$word] = 0;
 					}
-			  	}
+					$wordfreqs[$word]+=1;
+				}
 			}
-			arsort($wordfreqs);
-			$this->myWords=$wordfreqs;
+		arsort($wordfreqs);
+		$this->myWords=$wordfreqs;
 		}
 	public function get_file_size(){
 		$this->size = strlen($this->html->plaintext);
@@ -189,6 +182,26 @@ class Page {
 		}
 		return $tables_array;
 	}
+	public function validate_word($word){
+		if($word == "" || $word == " "){
+			return false;
+		}
+		if(is_numeric($word)){
+			return false;
+		}
+		return true;
+
+	}
+	public function validate_url($url){
+		if(substr($url, 0, 1) == "#" || strpos($url, "@")!==false){
+			return false;
+		}
+		$extension = end(explode(".", $url));
+		if($extension == "jpg" || $extension == "png" || $extension == "gif"){
+			return false;
+		}		
+		return true;
+	}
 
 
 }
@@ -201,23 +214,15 @@ class Page {
 		public function __construct($url){
 
 			$this->url = $url;
-			$this->html = new simple_html_dom();
-			$web = new WebBrowser();
-			$result = $web->Process($url);
-		  	if (!$result["success"]) {
-		  		echo "Error retrieving URL.  " . $result["error"] . "\n" . $url;
-		  		$this->valid = false;
-		  	}
-		  	else if ($result["response"]["code"] != 200) {
-		  		echo "Error retrieving URL.  Server returned:  " . $result["response"]["code"] . " " . $result["response"]["meaning"] . "\n" . $url;
-		  		$this->valid = false;
-		  	}
-		  	else{
-		  		$this->html->load($result['body']);
-		  		$this->valid = true;
-		  		
-		  	}
-
+			$this->html = file_get_html($url);
+			if(!$this->html){
+				echo "Failed to open html stream " . $url;
+				$this->valid = false;
+			}
+			else {
+				echo "succesfully returned html stream " . $url;
+				$this->valid = true;
+			}
 		}
 public function getwhois(){
 	$query = $this->url;
@@ -289,16 +294,15 @@ public function getwhois(){
 
 
 }
-	class Document {
-
-		public $url;
-		public $data;
-		 public function __construct($url){
-		 	$this->url = $url;
-		 	if($url != ""){
-		 		$this->data = file_get_contents($url);
-		 	}
+class Document {
+	public $url;
+	public $data;
+	public function __construct($url){
+		 $this->url = $url;
+		 if($url != ""){
+		 	$this->data = file_get_contents($url);
 		 }
+	}
 }
 
 

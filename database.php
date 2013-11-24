@@ -51,23 +51,21 @@ Class ScrapeDB{
 		}
 		$parent_id = mysql_insert_id();
 		$parenttype = "html";
-		//end
-		// foreach ($page->myWords as $myword => $freq) {
-		// 	$word = mysql_real_escape_string($myword);
-		// 	$toinsert = mysql_query("INSERT INTO words (parent_id, word, frequency, parent_type) VALUES ($parent_id, '$word', $freq, '$parenttype');");
-		// 	if(!$toinsert){
-		// 		die("	word insert error: " . $word .   mysql_error());
-		// 	}
-		// }
-
-		// foreach ($page->myTags as $mytag => $mycontent) {		
-		// 	$tag = mysql_real_escape_string($mytag);
-		// 	$content = mysql_real_escape_string($mycontent);
-		// 	$toinsert = mysql_query("INSERT INTO tags (parent_id, tag, parent_type, content) VALUES ($parent_id, '$tag', '$parenttype', '$content');");
-		// 	if(!$toinsert){
-		// 		die("	tag insert error: " . $tag . $content .  mysql_error());
-		// 	}
-		// }
+		foreach ($page->myWords as $myword => $freq) {
+			$word = mysql_real_escape_string($myword);
+			$toinsert = mysql_query("INSERT INTO words (parent_id, word, frequency, parent_type) VALUES ($parent_id, '$word', $freq, '$parenttype');");
+			if(!$toinsert){
+				die("	word insert error: " . $word .   mysql_error());
+			}
+		}
+		foreach ($page->myTags as $mytag => $mycontent) {		
+			$tag = mysql_real_escape_string($mytag);
+			$content = mysql_real_escape_string($mycontent);
+			$toinsert = mysql_query("INSERT INTO tags (parent_id, tag, parent_type, content) VALUES ($parent_id, '$tag', '$parenttype', '$content');");
+			if(!$toinsert){
+				die("	tag insert error: " . $tag . $content .  mysql_error());
+			}
+		}
 	}
 
 	public function init_host($root){

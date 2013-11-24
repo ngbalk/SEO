@@ -1,7 +1,6 @@
 <?php
 
 Class Crawler {
-	set_time_limit(900);
 	public $myRootData;
 	public $myRootUrl;
 	public $myRootPage;
@@ -21,8 +20,8 @@ Class Crawler {
 		$this->myRootPage->init();
 
 		foreach ($this->myRootPage->links_in as $key => $value) {
-			if(!in_array($value, $this->to_scrape)){
-				array_push($this->to_scrape, $value);
+			if(!in_array(rtrim($value,"/"), $this->to_scrape)){
+				array_push($this->to_scrape, rtrim($value, "/"));
 			}
 		}
 	}
@@ -49,8 +48,8 @@ Class Crawler {
 				//$myDB->save_css($current->get_css());
 				$all_links_in = $current->links_in;
 				foreach ($all_links_in as $key => $next) {
-					if(!in_array($next, $this->myVisited) && !in_array($next, $this->to_scrape)){
-						array_push($this->to_scrape, $next);
+					if(!in_array(rtrim($next,"/"), $this->myVisited) && !in_array(rtrim($next,"/"), $this->to_scrape)){
+						array_push($this->to_scrape, rtrim($next,"/"));
 					}
 				}
 			}
