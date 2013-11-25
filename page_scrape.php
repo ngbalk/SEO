@@ -215,7 +215,8 @@ class Page {
 
 			$this->url = $url;
 			$this->html = file_get_html($url);
-			if(!$this->html){
+			$is_pdf = end(explode(".", $url)) == "pdf";
+			if(!$this->html || $is_pdf){
 				echo "Failed to open html stream " . $url;
 				$this->valid = false;
 			}
