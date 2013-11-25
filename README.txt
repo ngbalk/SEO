@@ -1,17 +1,13 @@
-The Scraper consists of main php files: domain_handler.php, page_scrape.php, database.php, and information.php
+The code here is distributable, so just download the .zip
 
-The scraper contains the classes Raw_Data, Page, Script, ScrapeDB, and Crawler.  The Crawler controls these other
-classes.  
+You can run this on any computer that has php already installed.  All you need to do is go to command line, cd to the directory
+that contains the the files, and execute the function execute.php.  This function creates a Slave class that pings a database
+for urls to scrape.  In order to connect to specify the database that you would like to connect to, specify this in 
+information.php.  
 
+Linux is currently installed on PC-16, and PC-14 in the conference room.  In order for them to be able to run the .php files, 
+we will need to also install something like LAMP on them.  Once that is installed, the "Slave" computers need simply to
+execute "execute.php" while the "Master" computer executes "master.php".  
 
-Currently I have been scraping www.frontcoding.com to test everything out.  At the top of domain_handler.php, you can go in 
-and change this to any other domain name that you like.  If you go into information.php, you can change the server name, 
-database name, username, and password that you would like to use on your system.  If you open up domain_handler in your
-localhost (i.e. localhost/domain_handler.php) it should run and fill out the database.
+AGAIN, SPECIFY THE DATABASE TO CONNECT TO IN "information.php".  ALSO, SLAVE MACHINES NEED SPECIFY machine_id IN "information.php"
 
-***NOTE: The relationships table is still empty and most of the whois data is still empty.
-
-I have also included a SQL file called seo.sql which should create the schema for your database.  This was exported from 
-phpmyadmin.
-
-If you need any more information, email me at nick@frontcoding.com.
