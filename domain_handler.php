@@ -6,6 +6,7 @@ Class Crawler {
 	public $myRootPage;
 	public $to_scrape; 
 	public $myVisited; 
+	public $valid;
 
 	public function __construct($root){
 		global $root_url;
@@ -14,13 +15,19 @@ Class Crawler {
 		$this->myVisited = array();
 		$this->myRootUrl = $root;
 		$root_data = new Raw_Data($root); 
-		$this->myRootData = $root_data;
-		$this->myRootPage = new Page($root, $root_data->html);
-		$this->myRootPage->init();
+		if(!$root_data->valid){
+			$this->valid=false;
+		}
+		else{
+			$this->valid=true;
+			$this->myRootData = $root_data;
+			$this->myRootPage = new Page($root, $root_data->html);
+			$this->myRootPage->init();
 
-		foreach ($this->myRootPage->links_in as $key => $value) {
-			if(!in_array(rtrim($value,"/"), $this->to_scrape)){
-				array_push($this->to_scrape, rtrim($value, "/"));
+			foreach ($this->myRootPage->links_in as $key => $value) {
+				if(!in_array(rtrim($value,"/"), $this->to_scrape)){
+					array_push($this->to_scrape, rtrim($value, "/"));
+				}
 			}
 		}
 

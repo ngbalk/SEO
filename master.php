@@ -1,5 +1,6 @@
 <?php
 require_once "information.php";
+require_once "create_tables.php";
 $sourcefile = "Milkpowder-new.csv";
 $myMaster = new Master($hostname, $database, $username, $password);
 $myMaster->add_job($sourcefile);
@@ -10,9 +11,11 @@ Class Master{
 		$dbhandle = mysql_connect($hostname, $username, $password)
 				or die("Unable to connect to MySQL host");
 		echo "connected to host";
+		
 		$selected = mysql_select_db($database, $dbhandle)
 				or die("Could not select db");
 		echo "selected database";
+
 
 	}
 	function add_job($sourcefile){

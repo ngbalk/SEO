@@ -75,10 +75,11 @@ Class Obey{
 		}
 		$status;
 		$Crawler = new Crawler($url);
-		if($Crawler->doCrawl()){
+		if($Crawler->valid){
+			$Crawler->doCrawl();
 			echo "Succesfully Crawled " . $url;
 			$status=true;
-		}
+		}	
 		else{
 			$status = false;
 		}
