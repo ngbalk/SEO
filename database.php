@@ -24,8 +24,14 @@ Class ScrapeDB{
 		$htmltoinsert = mysql_real_escape_string($page->html->innertext);
 		$datatype = "html";
 		$numbytes = $page->size;
-		//end
-		$raw_data_insert = mysql_query("INSERT INTO raw_data (url, data_type, size, scraper_data) VALUES ('$urltoinsert', '$datatype', $numbytes, '$htmltoinsert');");
+		$headers = get_headers("http://www.anbolac.com/main.asp");
+		foreach ($headers as $header) {
+			$found_header = strpos($header, "Content-Type:");
+			if($found_header!==false){
+				$content_type = substr($header, 14);
+			}
+		}
+		$raw_data_insert = mysql_query("INSERT INTO raw_data (url, data_type, size, scraper_data) VALUES ('$urltoinsert', '$content_type', $numbytes, '$htmltoinsert');");
 		if(!$raw_data_insert){
 			die("	raw data insert error" . mysql_error());
 
@@ -44,8 +50,8 @@ Class ScrapeDB{
 		else{
 			$pagetitle = "--No Title--";
 		}	
-		$pagetype = "html";
-		$webpages_insert=mysql_query("INSERT INTO webpages (tag_title, doctype, raw_data_id) VALUES ('$pagetitle', '$pagetype', last_insert_id());");
+
+		$webpages_insert=mysql_query("INSERT INTO webpages (tag_title, doctype, raw_data_id) VALUES ('$pagetitle', '$content_type', last_insert_id());");
 		if(!$webpages_insert){
 			die("	webpages insert error: " . mysql_error());
 		}

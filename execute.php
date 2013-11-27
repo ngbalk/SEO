@@ -12,29 +12,9 @@ require_once "database.php";
 require_once "domain_handler.php";
 require_once "slave.php";
 require_once "information.php";
-$machine_id = 1;
 $mySlave = new Slave($hostname, $database, $username, $password, $machine_id);
-$myAction = $mySlave->do_obey();
+$myAction = $mySlave->doObey();
 $myAction->execute();
-// $sourcefile = "Milkpowder-new.csv";
-// $handle = fopen($sourcefile, "r");
-// while($row = fgetcsv($handle)) {
-// 	foreach ($row as $url) {
-// 		if(substr($url, 0, 4) == "http"){
-// 			$query = $url;
-// 			echo $query . '<br>';
-// 			$myCrawler = new Crawler($query);
-// 			if($myCrawler->doCrawl()) echo "Crawl Complete";			
-// 		}
-// 	}
-// }
-// echo "All Crawls Complete";
-// fclose($handle);
-
-// $myCrawler = new Crawler('http://www.a2milk.com.au/faq.php');
-// if($myCrawler->doCrawl()){
-// 	echo "Crawl Complete";
-// }
 
 
-//A2 Platinum,A2 ??,http://www.a2milk.com.au/faq.php,New Zealand,A2-Platinum Folder (1 pic)
+

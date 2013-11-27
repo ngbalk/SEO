@@ -13,8 +13,7 @@ Class Crawler {
 		$this->to_scrape = array();
 		$this->myVisited = array();
 		$this->myRootUrl = $root;
-		
-		$root_data = new Raw_Data($root);
+		$root_data = new Raw_Data($root); 
 		$this->myRootData = $root_data;
 		$this->myRootPage = new Page($root, $root_data->html);
 		$this->myRootPage->init();
@@ -24,6 +23,7 @@ Class Crawler {
 				array_push($this->to_scrape, rtrim($value, "/"));
 			}
 		}
+
 	}
 	public function doCrawl(){
 		include "information.php";

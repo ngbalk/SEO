@@ -14,7 +14,7 @@ Class Slave{
 		$this->username = $username;
 		$this->password = $password;
 	}
-	public function do_obey(){
+	public function doObey(){
 		$action = new Obey($this->hostname, $this->database, $this->username, $this->password, $this->machine_id);
 		return $action;
 	}
@@ -87,18 +87,18 @@ Class Obey{
 	}
 
 	public function check_in($status, $id){
-	if($status){
-		$ins = 'complete';
-	}
-	else{
-		$ins = 'failed';
-	}
-	$sql = "UPDATE jobs SET status = '$ins' WHERE id = '$id';";
-	$result = mysql_query($sql);
-	if(!$result){
-		echo "Could not update status to complete" . mysql_error();
-	}
-	$this->execute();	
+		if($status){
+			$ins = 'complete';
+		}
+		else{
+			$ins = 'failed';
+		}
+		$sql = "UPDATE jobs SET status = '$ins' WHERE id = '$id';";
+		$result = mysql_query($sql);
+		if(!$result){
+			echo "Could not update status to complete" . mysql_error();
+		}
+		$this->execute();	
 	}
 
 

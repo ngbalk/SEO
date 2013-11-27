@@ -293,7 +293,6 @@ public function getwhois(){
 
 }
 
-
 }
 class Document {
 	public $url;
