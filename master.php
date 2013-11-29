@@ -1,6 +1,5 @@
 <?php
 require_once "information.php";
-require_once "create_tables.php";
 $sourcefile = "Milkpowder-new.csv";
 $myMaster = new Master($hostname, $database, $username, $password);
 $myMaster->add_job($sourcefile);
