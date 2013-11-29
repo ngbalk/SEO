@@ -16,9 +16,13 @@ Class ScrapeDB{
 
 		$selected = mysql_select_db($database, $dbhandle)
 			or die("Could not select db");
+		mysql_set_charset('utf8');
+		mysql_query("SET NAMES utf8");
 		}
+		
 	
 	public function init_save_page($page, $hostid){
+		mysql_set_charset('utf8');
 		//raw_data variables
 		$urltoinsert = mysql_real_escape_string($page->url);
 		$htmltoinsert = mysql_real_escape_string($page->html->innertext);
@@ -50,7 +54,7 @@ Class ScrapeDB{
 		else{
 			$pagetitle = "--No Title--";
 		}	
-
+		mysql_set_charset('utf8');
 		$webpages_insert=mysql_query("INSERT INTO webpages (tag_title, doctype, raw_data_id) VALUES ('$pagetitle', '$content_type', last_insert_id());");
 		if(!$webpages_insert){
 			die("	webpages insert error: " . mysql_error());
@@ -59,6 +63,7 @@ Class ScrapeDB{
 		$parenttype = "html";
 		foreach ($page->myWords as $myword => $freq) {
 			$word = mysql_real_escape_string($myword);
+			mysql_set_charset('utf8');
 			$toinsert = mysql_query("INSERT INTO words (parent_id, word, frequency, parent_type) VALUES ($parent_id, '$word', $freq, '$parenttype');");
 			if(!$toinsert){
 				die("	word insert error: " . $word .   mysql_error());
@@ -67,6 +72,7 @@ Class ScrapeDB{
 		foreach ($page->myTags as $mytag => $mycontent) {		
 			$tag = mysql_real_escape_string($mytag);
 			$content = mysql_real_escape_string($mycontent);
+			mysql_set_charset('utf8');
 			$toinsert = mysql_query("INSERT INTO tags (parent_id, tag, parent_type, content) VALUES ($parent_id, '$tag', '$parenttype', '$content');");
 			if(!$toinsert){
 				die("	tag insert error: " . $tag . $content .  mysql_error());

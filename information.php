@@ -2,7 +2,7 @@
 	$username = "root";
 	$password = "root";
 	$hostname = "localhost";
-	$database = "seo";
+	$database = "seotest";
 	$machine_id = 1;
 
 ?>
