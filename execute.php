@@ -12,6 +12,7 @@ require_once "database.php";
 require_once "domain_handler.php";
 require_once "slave.php";
 require_once "information.php";
+require_once "parse_words.php";
 $mySlave = new Slave($hostname, $database, $username, $password, $machine_id);
 $myAction = $mySlave->doObey();
 $myAction->execute();

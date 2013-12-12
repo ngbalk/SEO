@@ -1,6 +1,5 @@
 <?php
 require_once "information.php";
-$sourcefile = "Milkpowder-new.csv";
 $myMaster = new Master($hostname, $database, $username, $password);
 $myMaster->add_job($sourcefile);
 

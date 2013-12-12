@@ -33,10 +33,12 @@ Class Crawler {
 
 	}
 	public function doCrawl(){
+		$pageCount = 0;
 		include "information.php";
 		$myDB = new ScrapeDB($username, $password, $hostname, $database);
 		$hostid = $myDB->init_host($this->myRootData);
-		while (!empty($this->to_scrape)) {
+		while (!empty($this->to_scrape) && $pageCount <= $maxPages) {
+			$pageCount += 1;
 			$url = array_shift($this->to_scrape);
 			array_push($this->myVisited, $url);
 			$raw_data = new Raw_Data($url);
