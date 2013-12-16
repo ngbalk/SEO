@@ -21,66 +21,76 @@ Class ScrapeDB{
 		}
 		
 	
-	public function init_save_page($page, $hostid){
+	public function init_save_page($page, $hostid, $switch){
+		mysql_query("SET NAMES utf8");
 		mysql_set_charset('utf8');
 		//raw_data variables
 		$urltoinsert = mysql_real_escape_string($page->url);
 		$htmltoinsert = mysql_real_escape_string($page->html->innertext);
 		$datatype = "html";
 		$numbytes = $page->size;
-		$headers = get_headers("http://www.anbolac.com/main.asp");
+		$headers = get_headers($page->url);
 		foreach ($headers as $header) {
 			$found_header = strpos($header, "Content-Type:");
 			if($found_header!==false){
 				$content_type = substr($header, 14);
 			}
 		}
-		$raw_data_insert = mysql_query("INSERT INTO raw_data (url, data_type, size, scraper_data) VALUES ('$urltoinsert', '$content_type', $numbytes, '$htmltoinsert');");
-		if(!$raw_data_insert){
-			die("	raw data insert error" . mysql_error());
-
-		}
-		$this->form_relations(mysql_insert_id(), $this->host_id);
-		
-
-		if(is_object($page) && isset($page)){
-			if(is_object($page->title)){
-				$pagetitle = mysql_real_escape_string($page->title->innertext);
-			}
-			else {
-				$pagetitle = "--No Title--";
-			}
-		}
-		else{
-			$pagetitle = "--No Title--";
-		}	
 		mysql_set_charset('utf8');
-		$webpages_insert=mysql_query("INSERT INTO webpages (tag_title, doctype, raw_data_id) VALUES ('$pagetitle', '$content_type', last_insert_id());");
-		if(!$webpages_insert){
-			die("	webpages insert error: " . mysql_error());
-		}
-		$parent_id = mysql_insert_id();
-		$parenttype = "html";
-		foreach ($page->myWords as $myword => $freq) {
-			$word = mysql_real_escape_string($myword);
-			mysql_set_charset('utf8');
-			$toinsert = mysql_query("INSERT INTO words (parent_id, word, frequency, parent_type) VALUES ($parent_id, '$word', $freq, '$parenttype');");
-			if(!$toinsert){
-				die("	word insert error: " . $word .   mysql_error());
-			}
-		}
-		foreach ($page->myTags as $mytag => $mycontent) {		
-			$tag = mysql_real_escape_string($mytag);
-			$content = mysql_real_escape_string($mycontent);
-			mysql_set_charset('utf8');
-			$toinsert = mysql_query("INSERT INTO tags (parent_id, tag, parent_type, content) VALUES ($parent_id, '$tag', '$parenttype', '$content');");
-			if(!$toinsert){
-				die("	tag insert error: " . $tag . $content .  mysql_error());
-			}
+		switch ($switch) {
+			case "raw":
+				$raw_data_insert = mysql_query("INSERT INTO raw_data (url, data_type, size, scraper_data) VALUES ('$urltoinsert', '$content_type', $numbytes, '$htmltoinsert');");
+				if(!$raw_data_insert){
+					die("	raw data insert error" . mysql_error());
+
+				}
+				$this->form_relations(mysql_insert_id(), $this->host_id);
+			break;
+			case "parse":
+				if(is_object($page) && isset($page)){
+					if(is_object($page->title)){
+						$pagetitle = mysql_real_escape_string($page->title->innertext);
+					}
+					else {
+						$pagetitle = "--No Title--";
+					}
+				}
+				else{
+					$pagetitle = "--No Title--";
+				}	
+				mysql_query("SET NAMES utf8");
+				mysql_set_charset('utf8');
+				$webpages_insert=mysql_query("INSERT INTO webpages (tag_title, doctype, raw_data_id) VALUES ('$pagetitle', '$content_type', last_insert_id());");
+				if(!$webpages_insert){
+					die("	webpages insert error: " . mysql_error());
+				}
+				$parent_id = mysql_insert_id();
+				$parenttype = "html";
+				foreach ($page->myWords as $myword => $freq) {
+					$word = mysql_real_escape_string($myword);
+					mysql_set_charset('utf8');
+					$toinsert = mysql_query("INSERT INTO words (parent_id, word, frequency, parent_type) VALUES ($parent_id, '$word', $freq, '$parenttype');");
+					if(!$toinsert){
+						die("	word insert error: " . $word .   mysql_error());
+					}
+				}
+				foreach ($page->myTags as $mytag => $mycontent) {		
+					$tag = mysql_real_escape_string($mytag);
+					$content = mysql_real_escape_string($mycontent);
+					mysql_query("SET NAMES utf8");
+					mysql_set_charset('utf8');
+					$toinsert = mysql_query("INSERT INTO tags (parent_id, tag, parent_type, content) VALUES ($parent_id, '$tag', '$parenttype', '$content');");
+					if(!$toinsert){
+						die("	tag insert error: " . $tag . $content .  mysql_error());
+					}
+				}
+			break;
 		}
 	}
 
 	public function init_host($root){
+		mysql_query("SET NAMES utf8");
+		mysql_set_charset('utf8');
 		$hostname = mysql_real_escape_string($root->url);
 		$this->save_who_is($hostname, $root->getwhois());
 		$id = mysql_insert_id();

@@ -10,7 +10,7 @@ Get CSS files still not really sure how to do that.
 */
 
 class Page {
-	
+	public $Dictionary;
 	public $html; //store as simple_html_dom
 	public $url; //should be a string
 	public $title;
@@ -23,15 +23,16 @@ class Page {
 	public $links_in;
 	public $size;
 
-	public function __construct($url, $html){
+	public function __construct($url, $html, $Dictionary){
 		$this->url = $url;
-		$this->html = $html;	
+		$this->html = $html;
+		$this->Dictionary = $Dictionary;	
 	}
 	public function init(){
 		$this->parse_title();
 	  	$this->find_html_tags();
 	  	$this->find_all_words();
-	  	$this->store_links_in();
+	  	//$this->store_links_in();
 	  	$this->get_file_size();
 	}
 	public function parse_title(){
@@ -111,19 +112,25 @@ class Page {
 		return $tag_content_array;
 	}
 	public function find_all_words(){
-			$words = preg_split('/\s/', $this->html->find("body",0)->plaintext);
-			$wordfreqs = array();
-			foreach ($words as $word) {
-				$word = trim($word);
-				if ($this->validate_word($word)) {
-					if(!array_key_exists($word, $wordfreqs)){
-						$wordfreqs[$word] = 0;
-					}
-					$wordfreqs[$word]+=1;
+			$words = $this->html->find("body",0)->plaintext;
+			$this->Dictionary->parseString($words);
+			$wordsCn = $this->Dictionary->chineseWords;
+			$wordsEn = $this->Dictionary->englishWords;
+			$wordsAll = array_merge($wordsCn, $wordsEn);
+			$freqList = array();
+			foreach ($wordsAll as $word) {
+				if(ctype_space($word) || $word == " " || $word == ""){
+					continue;
 				}
+				if(!array_key_exists($word, $freqList)){
+					$freqList[$word] = 1;
+				}
+				else{
+					$freqList[$word] += 1;
 			}
-		arsort($wordfreqs);
-		$this->myWords=$wordfreqs;
+		}
+		$this->myWords=$freqList;
+		$this->Dictionary->clear();
 		}
 	public function get_file_size(){
 		$this->size = strlen($this->html->plaintext);

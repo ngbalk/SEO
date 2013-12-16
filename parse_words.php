@@ -1,4 +1,5 @@
 <?php
+//This class is used for parsing Chinese characters into individual words
 ini_set('max_execution_time', 10000000);
 include_once 'smart-character-segmenter/Dictionary.php';
 $Parse = new Parse();
@@ -9,8 +10,8 @@ Class Parse {
 	public $lowerBound;
 	public $upperBound;
 	public function __construct(){
-		require_once "information.php";
-		$this->databaseConnect($hostname, $username, $password,$database);
+		include_once "information.php";
+		$this->databaseConnect($hostname, $username, $password, $database);
 		$max = $this->getMax();
 		$this->lowerBound = ($responsibility[0]/100)*$max;
 		$this->upperBound = ($responsibility[1]/100)*$max;
